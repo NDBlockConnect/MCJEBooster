@@ -202,6 +202,30 @@ public class RegionScheduler {
     private static final String REGION_SIZE_PROPERTY = "mcjebooster.regionSize";
 
     /**
+     * v26.0-Alpha.5: opt-in dynamic task queue mode.
+     * Enable with {@code -Dmcjebooster.dynamicQueue=true}. When enabled,
+     * region ticks flow through a shared {@link DynamicTickQueue} that the
+     * worker pool drains with true work-stealing semantics instead of
+     * fixed per-region futures.
+     */
+    private static final boolean DYNAMIC_QUEUE_ENABLED =
+        Boolean.getBoolean("mcjebooster.dynamicQueue");
+
+    /** Shared dynamic tick queue (v26.0-Alpha.5). */
+    private final com.mcjebooster.core.DynamicTickQueue dynamicQueue =
+        new com.mcjebooster.core.DynamicTickQueue();
+
+    /** Whether the dynamic queue mode is active for this scheduler. */
+    public boolean isDynamicQueueEnabled() {
+        return DYNAMIC_QUEUE_ENABLED;
+    }
+
+    /** Exposes the dynamic queue for diagnostics and tests. */
+    public com.mcjebooster.core.DynamicTickQueue getDynamicQueue() {
+        return dynamicQueue;
+    }
+
+    /**
      * Resolves the effective region size.
      *
      * Priority: {@code -Dmcjebooster.regionSize=N} (N &gt;= 4) &gt;
@@ -305,26 +329,50 @@ public class RegionScheduler {
         readLock.lock();
         
         try {
-            // v26.0-Alpha.4: batched waiting instead of one global barrier.
-            // Regions are split into batches of at most workerCount * 2; each
-            // batch is awaited independently with a proportional budget. A slow
-            // region now stalls only its own batch instead of every worker
-            // (FACT.md "wooden barrel effect" analysis).
-            List<Region> regionList = new ArrayList<>(regions.values());
-            int batchSize = Math.max(1, workerCount * 2);
-            List<List<Region>> batches = partitionBatches(regionList, batchSize);
-            long perBatchBudgetMs = Math.max(1, tickTimeoutMs / Math.max(1, batches.size()));
-
-            for (List<Region> batch : batches) {
-                List<CompletableFuture<Void>> futures = new ArrayList<>(batch.size());
-                for (Region region : batch) {
-                    futures.add(CompletableFuture.runAsync(
-                        () -> tickRegion(region, minecraftServer),
-                        workerPool
-                    ));
+            // v26.0-Alpha.5: opt-in dynamic task queue. Region ticks are
+            // pushed to a shared lock-free queue and drained by workerCount
+            // polling loops, so busy regions do not pin a worker and load
+            // balances dynamically (FACT.md Phase-1 item 4).
+            if (DYNAMIC_QUEUE_ENABLED) {
+                List<Region> dynamicRegions = new ArrayList<>(regions.values());
+                List<com.mcjebooster.core.DynamicTickQueue.TickTask> tasks =
+                    new ArrayList<>(dynamicRegions.size());
+                for (Region region : dynamicRegions) {
+                    final Region r = region;
+                    tasks.add(new com.mcjebooster.core.DynamicTickQueue.TickTask() {
+                        @Override public String id() { return "region-" + r.getId(); }
+                        @Override public void run() { tickRegion(r, minecraftServer); }
+                    });
                 }
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                    .get(perBatchBudgetMs, TimeUnit.MILLISECONDS);
+                dynamicQueue.offerAll(tasks);
+                com.mcjebooster.core.DynamicTickQueue.DrainStats stats =
+                    dynamicQueue.drain(workerPool, workerCount, tickTimeoutMs);
+                if (stats.queued() > 0 && stats.executed() + stats.failed() < stats.queued()) {
+                    Logger.warn("Dynamic queue drain incomplete: executed=" + stats.executed()
+                        + " failed=" + stats.failed() + " queued=" + stats.queued());
+                }
+            } else {
+                // v26.0-Alpha.4: batched waiting instead of one global barrier.
+                // Regions are split into batches of at most workerCount * 2; each
+                // batch is awaited independently with a proportional budget. A slow
+                // region now stalls only its own batch instead of every worker
+                // (FACT.md "wooden barrel effect" analysis).
+                List<Region> regionList = new ArrayList<>(regions.values());
+                int batchSize = Math.max(1, workerCount * 2);
+                List<List<Region>> batches = partitionBatches(regionList, batchSize);
+                long perBatchBudgetMs = Math.max(1, tickTimeoutMs / Math.max(1, batches.size()));
+
+                for (List<Region> batch : batches) {
+                    List<CompletableFuture<Void>> futures = new ArrayList<>(batch.size());
+                    for (Region region : batch) {
+                        futures.add(CompletableFuture.runAsync(
+                            () -> tickRegion(region, minecraftServer),
+                            workerPool
+                        ));
+                    }
+                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                        .get(perBatchBudgetMs, TimeUnit.MILLISECONDS);
+                }
             }
                 
         } catch (TimeoutException e) {
