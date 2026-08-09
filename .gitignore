@@ -55,6 +55,20 @@ desktop.ini
 *.swp
 *.swo
 *~
+*.bak
+*.orig
+*.rej
+
+# JVM crash / diagnostic artifacts
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# Downloaded dependency cache
+lib/
+
+# Maven shade leftovers
+dependency-reduced-pom.xml
 
 # Test outputs
 test-output/
@@ -93,6 +107,8 @@ RELEASE_TEMPLATE.md
 TEST_PLAN.md
 Releases-*.md
 FACT.md
+PERFORMANCE_ANALYSIS.md
+RESEARCH_SUMMARY.md
 
 # Release snapshots directory
 releases/
