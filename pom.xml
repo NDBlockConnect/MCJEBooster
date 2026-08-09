@@ -22,7 +22,7 @@
     <!-- Project Identification -->
     <groupId>com.mcjebooster</groupId>
     <artifactId>mcjebooster-core</artifactId>
-    <version>26.6-20260706</version>
+    <version>26.0-Alpha.1</version>
     <packaging>jar</packaging>
 
     <!-- Project Metadata -->
@@ -65,7 +65,6 @@
         <!-- Version Numbers -->
         <asm.version>9.6</asm.version>
         <junit.version>5.10.0</junit.version>
-        <slf4j.version>2.0.9</slf4j.version>
         
         <!-- Agent Configuration -->
         <agent.class>com.mcjebooster.agent.MCJEBoosterAgent</agent.class>
@@ -102,18 +101,6 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20231013</version>
-        </dependency>
-
-        <!-- Logging -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- Testing -->

@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Scanner;
 
+import com.mcjebooster.util.BoosterVersion;
 import com.mcjebooster.util.Logger;
 
 /**
@@ -68,7 +69,7 @@ public class InjectorMain {
     public static void main(String[] args) {
         Logger.info("=========================================");
         Logger.info("MCJEBooster External Injector");
-        Logger.info("Version: 26.1-05102026");
+        Logger.info("Version: " + BoosterVersion.VERSION);
         Logger.info("=========================================");
         
         // Parse command line arguments

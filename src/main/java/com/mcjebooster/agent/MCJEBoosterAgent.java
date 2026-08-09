@@ -27,6 +27,7 @@ import java.util.jar.JarFile;
 
 import com.mcjebooster.transformer.MinecraftServerTransformer;
 import com.mcjebooster.scheduler.RegionScheduler;
+import com.mcjebooster.util.BoosterVersion;
 import com.mcjebooster.util.VersionDetector;
 import com.mcjebooster.util.Logger;
 import com.mcjebooster.adapter.VersionAdapter;
@@ -142,7 +143,7 @@ public class MCJEBoosterAgent {
         try {
             Logger.info("=========================================");
             Logger.info("MCJEBooster Multi-Core Optimization Engine");
-            Logger.info("Version: 26.6-20260706");
+            Logger.info("Version: " + BoosterVersion.VERSION);
             Logger.info("Author: StarsailsClover");
             Logger.info("License: LGPL-2.1");
             Logger.info("=========================================");
