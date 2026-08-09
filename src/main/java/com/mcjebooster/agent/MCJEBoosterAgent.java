@@ -27,7 +27,9 @@ import java.util.jar.JarFile;
 
 import com.mcjebooster.transformer.MinecraftServerTransformer;
 import com.mcjebooster.scheduler.RegionScheduler;
+import com.mcjebooster.client.ClientMetrics;
 import com.mcjebooster.util.BoosterVersion;
+import com.mcjebooster.util.SideDetector;
 import com.mcjebooster.util.VersionDetector;
 import com.mcjebooster.util.Logger;
 import com.mcjebooster.adapter.VersionAdapter;
@@ -60,6 +62,9 @@ public class MCJEBoosterAgent {
     
     /** The detected Minecraft version */
     private static String detectedVersion = null;
+    
+    /** The detected hosting side (server/client), v26.1-Alpha.1 */
+    private static volatile SideDetector.Side detectedSide = null;
     
     /** The loaded version adapter */
     private static VersionAdapter versionAdapter = null;
@@ -155,6 +160,17 @@ public class MCJEBoosterAgent {
                 detectedVersion = "unknown";
             }
             Logger.info("Detected Minecraft version: " + detectedVersion);
+            
+            // Step 1.5: Detect hosting side (v26.1-Alpha.1, docs 02)
+            detectedSide = SideDetector.detectFromSystemProperties();
+            Logger.info("Detected hosting side: " + detectedSide);
+            if (detectedSide != SideDetector.Side.SERVER) {
+                Logger.info("Client metrics collector armed: "
+                    + ClientMetrics.getInstance().summarize());
+            }
+            if (SideDetector.isAprismPresent()) {
+                Logger.info("Aprism runtime detected - bridge mode available (v26.1)");
+            }
             
             // Step 2: Add agent jar to system classloader so dependencies are visible
             appendAgentToBootstrap(inst);
@@ -413,6 +429,15 @@ public class MCJEBoosterAgent {
      */
     public static String getDetectedVersion() {
         return detectedVersion;
+    }
+    
+    /**
+     * Returns the detected hosting side (v26.1-Alpha.1).
+     * 
+     * @return the detected side, or null before initialization
+     */
+    public static SideDetector.Side getDetectedSide() {
+        return detectedSide;
     }
     
     /**
