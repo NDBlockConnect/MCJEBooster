@@ -203,12 +203,13 @@ public class RegionScheduler {
 
     /**
      * v26.0-Alpha.5: opt-in dynamic task queue mode.
-     * Enable with {@code -Dmcjebooster.dynamicQueue=true}. When enabled,
+     * Enable with {@code -Dmcjebooster.dynamicQueue=true} (initial value)
+     * or {@link #setDynamicQueueEnabled(boolean)} at runtime. When enabled,
      * region ticks flow through a shared {@link DynamicTickQueue} that the
      * worker pool drains with true work-stealing semantics instead of
      * fixed per-region futures.
      */
-    private static final boolean DYNAMIC_QUEUE_ENABLED =
+    private volatile boolean dynamicQueueEnabled =
         Boolean.getBoolean("mcjebooster.dynamicQueue");
 
     /** Shared dynamic tick queue (v26.0-Alpha.5). */
@@ -217,7 +218,17 @@ public class RegionScheduler {
 
     /** Whether the dynamic queue mode is active for this scheduler. */
     public boolean isDynamicQueueEnabled() {
-        return DYNAMIC_QUEUE_ENABLED;
+        return dynamicQueueEnabled;
+    }
+
+    /**
+     * Enables or disables the dynamic queue mode at runtime.
+     * Used by benchmarks to A/B compare scheduling strategies.
+     *
+     * @param enabled true to route region ticks through the dynamic queue
+     */
+    public void setDynamicQueueEnabled(boolean enabled) {
+        this.dynamicQueueEnabled = enabled;
     }
 
     /** Exposes the dynamic queue for diagnostics and tests. */
@@ -333,7 +344,7 @@ public class RegionScheduler {
             // pushed to a shared lock-free queue and drained by workerCount
             // polling loops, so busy regions do not pin a worker and load
             // balances dynamically (FACT.md Phase-1 item 4).
-            if (DYNAMIC_QUEUE_ENABLED) {
+            if (dynamicQueueEnabled) {
                 List<Region> dynamicRegions = new ArrayList<>(regions.values());
                 List<com.mcjebooster.core.DynamicTickQueue.TickTask> tasks =
                     new ArrayList<>(dynamicRegions.size());
