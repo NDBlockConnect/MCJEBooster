@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v26.1-Alpha.5] - 2026-08-10
+
+Release candidate for the v26.1 minor — the client-support series.
+Implements the hybrid architecture accepted in v26.0-Alpha.8
+(docs 02, EN canonical + ZH copy).
+
+### Added
+- `SideDetector` — SERVER / CLIENT_INTEGRATED / CLIENT_MULTIPLAYER /
+  UNKNOWN classification (Mojang + Yarn markers, launcher properties,
+  Aprism side property)
+- `ClientMetrics` — lock-free frame/tick observation layer for clients
+- `ClientClassMatcher` + `ClientSeamRegistry` + `ClientClassTransformer`
+  — read-only seam discovery (transform() always returns null)
+- `AprismBridge` — reflective bridge to Aprism v26.1-Alpha.8's lowlevel
+  API (MethodHookRegistry, ClassRedefiner); zero dependency on Aprism,
+  safe no-op when absent
+- `BoosterMode` — `-Dmcjebooster.mode=auto|standalone|aprism` selection
+- `ClientIntegration` — side+mode coordinator with arm/disarm lifecycle
+  and rollback integration in MCJEBoosterAgent
+- config/mcjebooster.yml `client` section (mode, metrics, seamDiscovery)
+- End-to-end pipeline integration tests on synthetic bytecode
+
+### Safety guarantees
+- Client hooks measure only; tick parallelism stays server-side
+- `ClientClassTransformer` never returns modified bytes
+- Standalone server behavior unchanged; all new paths opt-in
+
+### Documentation
+- docs 02 status refreshed (all five v26.1 components shipped)
+
+---
+
 ## [v26.0-Alpha.9] - 2026-08-10
 
 Release candidate for the v26.0 minor. This is the first series versioned

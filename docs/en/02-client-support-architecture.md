@@ -1,7 +1,8 @@
 # 02 - Client-Side Support Architecture (Hybrid Aprism Design)
 
 > English is the canonical documentation; `docs/zh/` holds the Chinese copy.
-> Status: design accepted in v26.0-Alpha.8, implemented in the v26.1 series.
+> Status: design accepted in v26.0-Alpha.8; **implemented in v26.1-Alpha.1 … Alpha.5**
+> (see delivery table §6 — all components shipped).
 
 ## 1. Problem statement
 
@@ -122,13 +123,13 @@ for v26.1 (candidate for v26.2+ once the seam is proven).
 
 ## 6. v26.1 delivery plan
 
-| Pre-Release | Content |
-|---|---|
-| v26.1-Alpha.1 | `SideDetector` + tests (client/server/integrated/unknown) |
-| v26.1-Alpha.2 | `ClientClassTransformer` seam (client class matching, measurement hooks) |
-| v26.1-Alpha.3 | `AprismBridge` (reflective, compile-safe, optional) |
-| v26.1-Alpha.4 | hybrid mode selection in agent + config integration |
-| v26.1-Alpha.5 | integration tests, docs refresh, release candidate prep |
+| Pre-Release | Content | Status |
+|---|---|---|
+| v26.1-Alpha.1 | `SideDetector` + `ClientMetrics` + side-aware agent | ✅ shipped |
+| v26.1-Alpha.2 | `ClientClassMatcher` + `ClientSeamRegistry` + read-only `ClientClassTransformer` | ✅ shipped |
+| v26.1-Alpha.3 | `AprismBridge` (reflective, compile-safe, optional, stub-tested) | ✅ shipped |
+| v26.1-Alpha.4 | `BoosterMode` hybrid selection + `ClientIntegration` wiring + config | ✅ shipped |
+| v26.1-Alpha.5 | End-to-end pipeline integration tests + release-candidate prep | ✅ shipped |
 
 ## 7. Decision record
 
