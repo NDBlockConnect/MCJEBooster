@@ -195,17 +195,72 @@ public class RegionScheduler {
         Logger.info("RegionScheduler initialization completed");
     }
     
+    /** Default region edge length in chunks (v26.0-Alpha.4: refined 16 -> 8). */
+    private static final int DEFAULT_REGION_SIZE = 8;
+
+    /** System property override for the region edge length in chunks. */
+    private static final String REGION_SIZE_PROPERTY = "mcjebooster.regionSize";
+
+    /**
+     * Resolves the effective region size.
+     *
+     * Priority: {@code -Dmcjebooster.regionSize=N} (N &gt;= 4) &gt;
+     * version adapter value (N &gt;= 4) &gt; {@link #DEFAULT_REGION_SIZE}.
+     *
+     * @param adapter the active version adapter, may be null
+     * @return region edge length in chunks
+     */
+    public static int resolveRegionSize(VersionAdapter adapter) {
+        String override = System.getProperty(REGION_SIZE_PROPERTY);
+        if (override != null) {
+            try {
+                int value = Integer.parseInt(override.trim());
+                if (value >= 4) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // fall through to adapter/default
+            }
+        }
+        if (adapter != null) {
+            int adapterSize = adapter.getRegionSize();
+            if (adapterSize >= 4) {
+                return adapterSize;
+            }
+        }
+        return DEFAULT_REGION_SIZE;
+    }
+
+    /**
+     * Splits a list into consecutive batches of at most {@code batchSize}.
+     *
+     * @param items     the items to partition
+     * @param batchSize maximum batch size (&gt;= 1)
+     * @param <T>       element type
+     * @return ordered list of batches
+     */
+    public static <T> List<List<T>> partitionBatches(List<T> items, int batchSize) {
+        List<List<T>> batches = new ArrayList<>();
+        if (items == null || items.isEmpty()) {
+            return batches;
+        }
+        int size = Math.max(1, batchSize);
+        for (int from = 0; from < items.size(); from += size) {
+            batches.add(new ArrayList<>(items.subList(from, Math.min(from + size, items.size()))));
+        }
+        return batches;
+    }
+
     /**
      * Initializes the spatial regions for the world
      * Uses Z-order curve for spatial partitioning to improve cache locality
      */
     private void initializeRegions() {
-        // Default region configuration: divide world into regions
-        // Each region is 16x16 chunks (256x256 blocks)
-        int regionSize = 16;
-        if (versionAdapter != null) {
-            regionSize = versionAdapter.getRegionSize();
-        }
+        // Region configuration: divide world into regions.
+        // v26.0-Alpha.4: default refined to 8x8 chunks (128x128 blocks) to
+        // reduce load imbalance (FACT.md: 25:1 static-region load ratio).
+        // Adapters and -Dmcjebooster.regionSize can still override.
+        int regionSize = resolveRegionSize(versionAdapter);
         
         int worldRadius = 32; // 32 chunks radius = 64x64 chunk area
         
@@ -250,20 +305,27 @@ public class RegionScheduler {
         readLock.lock();
         
         try {
-            // Submit all region tasks to worker threads
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
-            
-            for (Region region : regions.values()) {
-                CompletableFuture<Void> future = CompletableFuture.runAsync(
-                    () -> tickRegion(region, minecraftServer),
-                    workerPool
-                );
-                futures.add(future);
+            // v26.0-Alpha.4: batched waiting instead of one global barrier.
+            // Regions are split into batches of at most workerCount * 2; each
+            // batch is awaited independently with a proportional budget. A slow
+            // region now stalls only its own batch instead of every worker
+            // (FACT.md "wooden barrel effect" analysis).
+            List<Region> regionList = new ArrayList<>(regions.values());
+            int batchSize = Math.max(1, workerCount * 2);
+            List<List<Region>> batches = partitionBatches(regionList, batchSize);
+            long perBatchBudgetMs = Math.max(1, tickTimeoutMs / Math.max(1, batches.size()));
+
+            for (List<Region> batch : batches) {
+                List<CompletableFuture<Void>> futures = new ArrayList<>(batch.size());
+                for (Region region : batch) {
+                    futures.add(CompletableFuture.runAsync(
+                        () -> tickRegion(region, minecraftServer),
+                        workerPool
+                    ));
+                }
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .get(perBatchBudgetMs, TimeUnit.MILLISECONDS);
             }
-            
-            // Wait for all regions to complete with timeout
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .get(tickTimeoutMs, TimeUnit.MILLISECONDS);
                 
         } catch (TimeoutException e) {
             // Tick timeout - cancel tasks and fall back

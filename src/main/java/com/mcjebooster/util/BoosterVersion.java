@@ -29,7 +29,7 @@ package com.mcjebooster.util;
 public final class BoosterVersion {
 
     /** Current release version, e.g. {@code v26.0-Alpha.1}. */
-    public static final String VERSION = "v26.0-Alpha.3";
+    public static final String VERSION = "v26.0-Alpha.4";
 
     /** Major line of the current version, e.g. {@code v26}. */
     public static final String MAJOR_LINE = "v26";
