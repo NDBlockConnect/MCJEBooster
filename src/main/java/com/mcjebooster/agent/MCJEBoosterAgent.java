@@ -173,6 +173,14 @@ public class MCJEBoosterAgent {
                 Logger.info(com.mcjebooster.client.AprismBridge.getInstance().getBridgeInfo());
             }
             
+            // Step 1.6: Resolve hybrid bridge mode + arm client integration
+            // (v26.1-Alpha.4). Effective mode is auto|standalone|aprism.
+            com.mcjebooster.client.BoosterMode.Mode effectiveMode =
+                com.mcjebooster.client.BoosterMode.resolveEffective();
+            Logger.info("Effective bridge mode: " + effectiveMode
+                + " (configured: " + com.mcjebooster.client.BoosterMode.configured() + ")");
+            com.mcjebooster.client.ClientIntegration.arm(detectedSide, effectiveMode);
+            
             // Step 2: Add agent jar to system classloader so dependencies are visible
             appendAgentToBootstrap(inst);
             
@@ -390,6 +398,9 @@ public class MCJEBoosterAgent {
             // Step 3: Clear all cached references
             versionAdapter = null;
             detectedVersion = null;
+            
+            // Step 4: Disarm client integration (v26.1-Alpha.4)
+            com.mcjebooster.client.ClientIntegration.disarm();
             
             Logger.info("Rollback completed - MCJEBooster disabled, vanilla behavior restored");
             

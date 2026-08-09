@@ -152,6 +152,27 @@ adapter:
   downloadTimeout: 30
 
 # ============================================================================
+# Client Support Settings (v26.1)
+# ============================================================================
+client:
+  # Bridge mode: auto | standalone | aprism
+  # auto       - use the Aprism bridge when the Aprism runtime is present
+  # standalone - never couple to Aprism (classic behavior)
+  # aprism     - require the Aprism bridge (falls back to standalone
+  #              with a diagnostic when Aprism is absent)
+  # Also settable via -Dmcjebooster.mode=auto|standalone|aprism
+  mode: auto
+
+  # Enable client-side metrics collection on detected client processes
+  # Default: true
+  metrics: true
+
+  # Enable read-only seam discovery on client classes (never modifies
+  # bytecode in v26.1)
+  # Default: true
+  seamDiscovery: true
+
+# ============================================================================
 # Experimental Features
 # ============================================================================
 experimental:
