@@ -85,3 +85,17 @@ npm-debug.log*
 # Documentation build
 docs/_build/
 docs/site/
+
+# Internal planning and development documents
+DEVELOPMENT_ROADMAP.md
+DEVELOPMENT_SUMMARY.md
+RELEASE_TEMPLATE.md
+TEST_PLAN.md
+Releases-*.md
+FACT.md
+
+# Release snapshots directory
+releases/
+
+# Visual Studio folder
+.vs/

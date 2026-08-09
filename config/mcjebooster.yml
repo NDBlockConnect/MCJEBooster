@@ -1,0 +1,238 @@
+# MCJEBooster Configuration File
+# Version: 26.7-20260726
+# Documentation: https://github.com/StarsailsClover/MCJEBooster/wiki/Configuration
+
+# ============================================================================
+# Performance Settings
+# ============================================================================
+performance:
+  # Number of worker threads for parallel processing
+  # Default: CPU cores - 1
+  # Recommended: Leave at default for best results
+  workerCount: auto
+  
+  # Size of each region in chunks (16x16 blocks per chunk)
+  # Smaller = better load distribution, higher overhead
+  # Larger = lower overhead, potential imbalance
+  # Default: 16
+  regionSize: 16
+  
+  # Maximum tick duration in milliseconds before timeout
+  # Default: 45ms (leaves 5ms buffer for 20 TPS target)
+  tickTimeout: 45
+  
+  # Interval in ticks between load rebalancing checks
+  # Default: 100 (approximately every 5 seconds)
+  rebalanceInterval: 100
+
+# ============================================================================
+# Monitoring Settings
+# ============================================================================
+monitoring:
+  # Enable monitoring system
+  enabled: true
+  
+  # Statistics logging interval in ticks
+  # Default: 1200 (every 60 seconds at 20 TPS)
+  statsInterval: 1200
+  
+  # Server snapshot analysis interval in ticks
+  # Default: 20 (every second at 20 TPS)
+  snapshotInterval: 20
+  
+  # Hotspot task execution interval in ticks
+  # Default: 10 (twice per second at 20 TPS)
+  hotspotInterval: 10
+  
+  # Enable JMX monitoring interface
+  # Default: false
+  jmxEnabled: false
+  
+  # JMX port (if enabled)
+  jmxPort: 9010
+
+# ============================================================================
+# Health Check Settings
+# ============================================================================
+health:
+  # Minimum TPS before triggering health alerts
+  # Default: 5.0
+  minTPS: 5.0
+  
+  # Maximum consecutive failures before auto-rollback
+  # Default: 5
+  maxConsecutiveFailures: 5
+  
+  # Enable deadlock detection
+  # Default: true
+  deadlockCheck: true
+  
+  # Enable automatic rollback on critical failures
+  # Default: true
+  autoRollback: true
+  
+  # Health check interval in milliseconds
+  # Default: 5000 (5 seconds)
+  checkInterval: 5000
+
+# ============================================================================
+# Logging Settings
+# ============================================================================
+logging:
+  # Log level: DEBUG, INFO, WARN, ERROR
+  # Default: INFO
+  level: INFO
+  
+  # Log file path
+  # Default: logs/mcjebooster.log
+  file: "logs/mcjebooster.log"
+  
+  # Maximum log file size before rotation
+  # Default: 10MB
+  maxFileSize: "10MB"
+  
+  # Number of rotated log files to keep
+  # Default: 5
+  maxFiles: 5
+  
+  # Include timestamps in console output
+  # Default: true
+  timestamps: true
+  
+  # Enable structured JSON logging
+  # Default: false
+  jsonFormat: false
+
+# ============================================================================
+# Hotspot Task Configuration
+# ============================================================================
+hotspot:
+  # Entity density analysis
+  entityDensity:
+    enabled: true
+    # Density threshold to consider a region "hot"
+    hotThreshold: 100
+  
+  # Chunk activity prediction
+  chunkActivity:
+    enabled: true
+    # Activity score threshold (0.0 - 1.0)
+    hotThreshold: 0.7
+  
+  # Redstone circuit detection (experimental)
+  redstoneCircuit:
+    enabled: false
+    # Maximum redstone components to analyze per region
+    maxComponents: 1000
+  
+  # Fluid simulation optimization (experimental)
+  fluidSimulation:
+    enabled: false
+    # Enable aggressive fluid batching
+    aggressiveBatching: false
+
+# ============================================================================
+# Adapter Configuration
+# ============================================================================
+adapter:
+  # Auto-download missing adapters from GitHub Releases
+  # Default: true
+  autoDownload: true
+  
+  # Adapter cache directory
+  # Default: adapters/
+  cacheDirectory: "adapters/"
+  
+  # Verify adapter checksums
+  # Default: true
+  verifyChecksums: true
+  
+  # Adapter download timeout in seconds
+  # Default: 30
+  downloadTimeout: 30
+
+# ============================================================================
+# Experimental Features
+# ============================================================================
+experimental:
+  # Enable parallel tick processing (may cause vanilla behavior changes)
+  # Warning: This modifies core game loop behavior
+  # Default: false
+  parallelTick: false
+  
+  # Machine learning-based load prediction
+  # Requires: MLLoadPredictor module
+  # Default: false
+  mlLoadPrediction: false
+  
+  # Adaptive region sizing based on load patterns
+  # Default: false
+  adaptiveRegions: false
+  
+  # Cross-dimension load balancing
+  # Default: false
+  crossDimensionBalance: false
+  
+  # GPU acceleration for entity AI (requires CUDA)
+  # Default: false
+  gpuAcceleration: false
+
+# ============================================================================
+# Advanced Settings (Experts only)
+# ============================================================================
+advanced:
+  # Reflection cache size
+  # Default: 10000
+  reflectionCacheSize: 10000
+  
+  # Reflection cache TTL in minutes
+  # Default: 10
+  reflectionCacheTTL: 10
+  
+  # Enable bytecode verification after transformation
+  # Default: true
+  verifyTransformation: true
+  
+  # Maximum retransform attempts
+  # Default: 3
+  maxRetransformAttempts: 3
+  
+  # Thread priority for worker threads (1-10)
+  # Default: 5 (normal priority)
+  workerThreadPriority: 5
+  
+  # Enable aggressive JIT compilation hints
+  # Default: false
+  aggressiveJIT: false
+
+# ============================================================================
+# Preset Profiles
+# ============================================================================
+# Uncomment one of the following to use a preset configuration
+# These will override the settings above
+
+# Low Latency Profile - Optimized for responsive gameplay
+# preset: low-latency
+
+# High Throughput Profile - Maximum TPS at cost of latency  
+# preset: high-throughput
+
+# Balanced Profile - Good mix of latency and throughput
+# preset: balanced
+
+# Conservative Profile - Minimal risk, gradual optimization
+# preset: conservative
+
+# ============================================================================
+# Configuration Notes
+# ============================================================================
+# 1. Changes to this file are automatically detected and applied (hot-reload)
+# 2. Invalid values will be ignored and defaults will be used
+# 3. Comments starting with # are ignored
+# 4. Boolean values: true, false
+# 5. Numeric values: integers or decimals
+# 6. String values: quoted or unquoted
+# 7. 'auto' for workerCount = CPU cores - 1
+#
+# For more information, visit:
+# https://github.com/StarsailsClover/MCJEBooster/wiki/Configuration
