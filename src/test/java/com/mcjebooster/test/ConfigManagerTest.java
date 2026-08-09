@@ -102,6 +102,14 @@ class ConfigManagerTest {
             version.substring(0, version.indexOf('.') == -1 ? version.length() : 3));
         assertFalse(version.contains("Alpha.10"), "Alpha.10 must never exist");
         assertNotNull(BoosterVersion.stage());
+        // Stage semantics: Alpha.9 is the release candidate
+        if (version.endsWith("-Alpha.9")) {
+            assertEquals(BoosterVersion.Stage.RELEASE_CANDIDATE, BoosterVersion.stage());
+        } else if (version.contains("-Alpha.")) {
+            assertEquals(BoosterVersion.Stage.ALPHA, BoosterVersion.stage());
+        } else {
+            assertEquals(BoosterVersion.Stage.GA, BoosterVersion.stage());
+        }
         assertTrue(BoosterVersion.banner().contains(version));
     }
 

@@ -2,7 +2,7 @@
 
 Minecraft Java Edition Multi-Core Optimization Engine | Official Compatibility Pack | High-Compatibility JVM-Level Performance Library
 
-**Version:** v26.1-05102026  
+**Version:** v26.0-Alpha.9 (release candidate)  
 **Author:** StarsailsClover  
 **License:** LGPL-2.1
 
@@ -65,18 +65,18 @@ MCJEBooster is an independent third-party software injection project that optimi
 ### Installation
 
 1. Download the latest release from GitHub
-2. Place `MCJEBooster-26.1-05102026.jar` in any directory
+2. Place `MCJEBooster-v26.0-Alpha.9.jar` in any directory
 3. Run Minecraft first
 4. Run the injector:
 
 ```bash
-java -jar MCJEBooster-26.1-05102026.jar
+java -jar MCJEBooster-v26.0-Alpha.9.jar
 ```
 
 ### Command Line Options
 
 ```bash
-java -jar MCJEBooster-26.1-05102026.jar [options]
+java -jar MCJEBooster-v26.0-Alpha.9.jar [options]
 
 Options:
   --auto      Automatically inject into the first Minecraft process
@@ -89,7 +89,16 @@ Options:
 Add to JVM arguments:
 
 ```bash
--javaagent:/path/to/MCJEBooster-26.1-05102026.jar
+-javaagent:/path/to/MCJEBooster-v26.0-Alpha.9.jar
+```
+
+### Tuning flags (new in the v26.0 line)
+
+```bash
+-Dmcjebooster.regionSize=8        # region edge in chunks (min 4)
+-Dmcjebooster.dynamicQueue=true   # opt-in dynamic work-stealing queue
+-Dmcjebooster.side=server|client  # force side detection result
+-Dmcjebooster.mode=auto|standalone|aprism   # bridge selection (v26.1)
 ```
 
 ---
@@ -190,7 +199,40 @@ cd MCJEBooster
 mvn clean package
 ```
 
-The built JAR will be in `target/MCJEBooster-26.1-05102026.jar`
+The built JAR will be in `target/MCJEBooster-v26.0-Alpha.9.jar`
+
+---
+
+## Versioning
+
+MCJEBooster follows the Aprism-style scheme (see `docs/en/01-versioning.md`):
+
+```
+v<Year>.<minor>[-Alpha.<n>]
+```
+
+- `v26` is the 2026 major line (`v26.0` ... `v26.9`)
+- `v26.0-Alpha.1` ... `Alpha.9` ship as GitHub **Pre-Releases**; `Alpha.9` is the
+  release candidate — there is never an `Alpha.10`
+- The bare version (`v26.0`) is the official GA **Release**
+- Artifacts are named `MCJEBooster-<version>.jar` and ship with a SHA-256
+  `checksums.txt`
+
+## Client-Side Support (roadmap)
+
+The v26.0 line is server-side only. The **hybrid client-support
+architecture** (design doc `docs/en/02-client-support-architecture.md`)
+lands in the v26.1 series, built on Aprism v26.1-Alpha.8's lower-level API
+(`ClassRedefiner` + `MethodHookRegistry`):
+
+| Scenario | v26.1 behavior |
+|---|---|
+| Dedicated server | unchanged |
+| Single-player client (integrated server) | server pipeline targets it |
+| Multiplayer client | detection + metrics + hook seam only |
+| Client under Aprism | reflective bridge mode |
+
+Render-thread / chunk-mesh optimization is deferred to v26.2+.
 
 ---
 
@@ -310,6 +352,6 @@ MCJEBooster is an independent third-party tool. It is not affiliated with Mojang
 
 ---
 
-**Repository:** https://github.com/StarsailsClover/MCJEBooster  
-**Issues:** https://github.com/StarsailsClover/MCJEBooster/issues  
-**Releases:** https://github.com/StarsailsClover/MCJEBooster/releases
+**Repository:** https://github.com/NDBlockConnect/MCJEBooster  
+**Issues:** https://github.com/NDBlockConnect/MCJEBooster/issues  
+**Releases:** https://github.com/NDBlockConnect/MCJEBooster/releases

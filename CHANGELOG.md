@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v26.0-Alpha.9] - 2026-08-10
+
+Release candidate for the v26.0 minor. This is the first series versioned
+under the Aprism-style scheme `v<Year>.<minor>[-Alpha.<n>]`; see
+`docs/en/01-versioning.md`.
+
+### Added
+- Hybrid client-support architecture design (docs/en/02 + docs/zh/02):
+  standalone core + optional Aprism bridge on Aprism v26.1-Alpha.8's
+  lower-level API (ClassRedefiner, MethodHookRegistry)
+- `SideDetector` — SERVER / CLIENT_INTEGRATED / CLIENT_MULTIPLAYER /
+  UNKNOWN classification with mapping-tolerant markers and Aprism
+  runtime presence detection
+- `DynamicTickQueue` — shared work queue for real work-stealing
+  (`-Dmcjebooster.dynamicQueue=true`)
+- `QueueBenchmark` + `scripts/run-queue-bench.sh` — A/B benchmark of
+  scheduling strategies with machine-parseable output
+- `BoosterVersion` — single source of truth for the runtime version
+- `scripts/build.sh` — deterministic Maven-free build (compile, JUnit 5,
+  fat jar, SHA-256 checksums)
+- Test coverage: 71 tests (was 7) across config, version contract,
+  reflection, scheduling, dynamic queue, adapter catalog integrity,
+  and side detection
+
+### Changed
+- MethodHandle hot-path in `ReflectionHelper.invokeMethod` (FACT.md's
+  highest-ROI optimization; all 13 scheduler call sites benefit)
+- Region granularity refined 16x16 -> 8x8 chunks, overridable via
+  `-Dmcjebooster.regionSize` and adapters
+- `tickRegions` batched waits replace the single global barrier
+- `.gitignore` hardened after a full git hygiene audit
+- pom.xml: dead slf4j dependency removed, version aligned to the new line
+
+### Documentation
+- `docs/en/01-versioning.md` + `docs/zh/01-版本规范.md`
+- `docs/en/02-client-support-architecture.md` + `docs/zh/02-客户端支持架构.md`
+
+---
+
 ## [v26.5-20260510] - 2026-05-10
 
 ### Added

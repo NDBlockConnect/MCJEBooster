@@ -2,7 +2,7 @@
 
 Minecraft Java版多核优化引擎 | 官方兼容包 | 高兼容性JVM级性能库
 
-**版本：** v26.1-05102026  
+**版本：** v26.0-Alpha.9（发布候选版）  
 **作者：** StarsailsClover  
 **许可证：** LGPL-2.1
 
@@ -65,18 +65,18 @@ MCJEBooster 是一个独立的第三方软件注入项目，通过JVM级多核�
 ### 安装步骤
 
 1. 从 GitHub 下载最新版本
-2. 将 `MCJEBooster-26.1-05102026.jar` 放在任意目录
+2. 将 `MCJEBooster-v26.0-Alpha.9.jar` 放在任意目录
 3. 先启动 Minecraft
 4. 运行注入器：
 
 ```bash
-java -jar MCJEBooster-26.1-05102026.jar
+java -jar MCJEBooster-v26.0-Alpha.9.jar
 ```
 
 ### 命令行选项
 
 ```bash
-java -jar MCJEBooster-26.1-05102026.jar [选项]
+java -jar MCJEBooster-v26.0-Alpha.9.jar [选项]
 
 选项：
   --auto      自动注入到第一个找到的 Minecraft 进程
@@ -89,7 +89,16 @@ java -jar MCJEBooster-26.1-05102026.jar [选项]
 添加到 JVM 参数：
 
 ```bash
--javaagent:/path/to/MCJEBooster-26.1-05102026.jar
+-javaagent:/path/to/MCJEBooster-v26.0-Alpha.9.jar
+```
+
+### 调优参数（v26.0 线新增）
+
+```bash
+-Dmcjebooster.regionSize=8        # 区域边长（区块数，最小 4）
+-Dmcjebooster.dynamicQueue=true   # 启用动态工作窃取队列
+-Dmcjebooster.side=server|client  # 强制指定端类型检测结果
+-Dmcjebooster.mode=auto|standalone|aprism   # 桥接模式选择（v26.1）
 ```
 
 ---
@@ -190,7 +199,39 @@ cd MCJEBooster
 mvn clean package
 ```
 
-构建后的 JAR 将位于 `target/MCJEBooster-26.1-05102026.jar`
+构建后的 JAR 将位于 `target/MCJEBooster-v26.0-Alpha.9.jar`（推荐使用
+`scripts/build.sh`：编译 → JUnit 测试 → 打包 → SHA-256 校验和，无需 Maven）
+
+---
+
+## 版本规范
+
+MCJEBooster 采用 Aprism 风格的版本方案（详见 `docs/zh/01-版本规范.md`）：
+
+```
+v<年>.<minor>[-Alpha.<n>]
+```
+
+- `v26` 为 2026 主线（`v26.0` ... `v26.9`）
+- `v26.0-Alpha.1` ... `Alpha.9` 以 GitHub **Pre-Release** 发布；
+  `Alpha.9` 即发布候选版——永远不会有 `Alpha.10`
+- 裸版本号（`v26.0`）为正式 GA **Release**
+- 产物命名为 `MCJEBooster-<版本号>.jar`，附带 SHA-256 `checksums.txt`
+
+## 客户端支持（路线图）
+
+v26.0 线仅支持服务端。**混合客户端支持架构**（设计文档
+`docs/zh/02-客户端支持架构.md`）在 v26.1 系列落地，基于 Aprism
+v26.1-Alpha.8 的底层 API（`ClassRedefiner` + `MethodHookRegistry`）：
+
+| 场景 | v26.1 行为 |
+|---|---|
+| 专用服务器 | 不变 |
+| 单人客户端（内置服务器） | 服务器管线作用于内置服务器 |
+| 联机客户端 | 检测 + 指标 + 钩子接缝 |
+| Aprism 下的客户端 | 反射桥模式 |
+
+渲染线程/区块网格优化推迟到 v26.2+。
 
 ---
 
@@ -200,21 +241,32 @@ mvn clean package
 MCJEBooster/
 ├── src/main/java/com/mcjebooster/
 │   ├── agent/
-│   │   └── MCJEBoosterAgent.java       # Java Agent 入口点
+│   │   ├── MCJEBoosterAgent.java       # Java Agent 入口点
+│   │   └── InjectionBridge.java        # 被注入字节码调用的桥
 │   ├── injector/
 │   │   └── InjectorMain.java           # 外部注入器
 │   ├── scheduler/
-│   │   └── RegionScheduler.java        # 多核调度器
+│   │   └── RegionScheduler.java        # 多核调度器（分批等待/动态队列）
+│   ├── core/
+│   │   ├── DynamicTickQueue.java       # 动态工作窃取任务队列
+│   │   └── TaskScheduler.java          # 多级任务调度
 │   ├── sync/
 │   │   └── SyncPointManager.java       # 同步管理
 │   ├── transformer/
 │   │   └── MinecraftServerTransformer.java # ASM 转换器
+│   ├── benchmark/
+│   │   ├── QueueBenchmark.java         # 调度策略 A/B 基准
+│   │   └── SchedulerMicroBenchmark.java
 │   └── util/
-│       ├── VersionDetector.java        # 版本检测
+│       ├── BoosterVersion.java         # 唯一版本源
+│       ├── SideDetector.java           # 客户端/服务端检测
+│       ├── VersionDetector.java        # MC 版本检测
+│       ├── ReflectionHelper.java       # 反射/MethodHandle 工具
 │       └── Logger.java                 # 日志工具
-├── src/main/resources/
-├── docs/                               # 文档
-├── native/                             # 原生代码（如需要）
+├── adapters/                           # 34 个版本适配器 (.mcjeb)
+├── config/                             # 配置文件示例
+├── scripts/                            # 构建/测试/基准脚本
+├── docs/en/ + docs/zh/                 # 英文规范文档 + 中文副本
 └── pom.xml                             # Maven 配置
 ```
 
@@ -267,7 +319,7 @@ MCJEBooster/
 启用调试日志：
 
 ```bash
-java -Dmcjebooster.log.level=DEBUG -jar MCJEBooster-26.1-05102026.jar
+java -Dmcjebooster.log.level=DEBUG -jar MCJEBooster-v26.0-Alpha.9.jar
 ```
 
 ---
@@ -310,6 +362,6 @@ MCJEBooster 是一个独立的第三方工具。它与 Mojang Studios 或 Micros
 
 ---
 
-**仓库：** https://github.com/StarsailsClover/MCJEBooster  
-**问题反馈：** https://github.com/StarsailsClover/MCJEBooster/issues  
-**版本发布：** https://github.com/StarsailsClover/MCJEBooster/releases
+**仓库：** https://github.com/NDBlockConnect/MCJEBooster  
+**问题反馈：** https://github.com/NDBlockConnect/MCJEBooster/issues  
+**版本发布：** https://github.com/NDBlockConnect/MCJEBooster/releases

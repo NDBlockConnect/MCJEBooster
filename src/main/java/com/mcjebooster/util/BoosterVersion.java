@@ -29,7 +29,7 @@ package com.mcjebooster.util;
 public final class BoosterVersion {
 
     /** Current release version, e.g. {@code v26.0-Alpha.1}. */
-    public static final String VERSION = "v26.0-Alpha.8";
+    public static final String VERSION = "v26.0-Alpha.9";
 
     /** Major line of the current version, e.g. {@code v26}. */
     public static final String MAJOR_LINE = "v26";
@@ -49,10 +49,14 @@ public final class BoosterVersion {
 
     /**
      * Returns the current stage derived from the version string.
+     * {@code Alpha.9} is the release candidate by convention.
      *
      * @return the current release stage
      */
     public static Stage stage() {
+        if (VERSION.endsWith("-Alpha.9")) {
+            return Stage.RELEASE_CANDIDATE;
+        }
         if (VERSION.contains("-Alpha.")) {
             return Stage.ALPHA;
         }
