@@ -170,6 +170,7 @@ public class MCJEBoosterAgent {
             }
             if (SideDetector.isAprismPresent()) {
                 Logger.info("Aprism runtime detected - bridge mode available (v26.1)");
+                Logger.info(com.mcjebooster.client.AprismBridge.getInstance().getBridgeInfo());
             }
             
             // Step 2: Add agent jar to system classloader so dependencies are visible
