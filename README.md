@@ -2,7 +2,7 @@
 
 Minecraft Java Edition Multi-Core Optimization Engine | Official Compatibility Pack | High-Compatibility JVM-Level Performance Library
 
-**Version:** v26.0-Alpha.9 (release candidate)  
+**Version:** v26.0  
 **Author:** StarsailsClover  
 **License:** LGPL-2.1
 

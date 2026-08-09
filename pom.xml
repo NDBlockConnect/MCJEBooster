@@ -22,7 +22,7 @@
     <!-- Project Identification -->
     <groupId>com.mcjebooster</groupId>
     <artifactId>mcjebooster-core</artifactId>
-    <version>26.0-Alpha.1</version>
+    <version>26.0</version>
     <packaging>jar</packaging>
 
     <!-- Project Metadata -->

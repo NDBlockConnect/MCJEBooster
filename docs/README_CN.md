@@ -2,7 +2,7 @@
 
 Minecraft Java版多核优化引擎 | 官方兼容包 | 高兼容性JVM级性能库
 
-**版本：** v26.0-Alpha.9（发布候选版）  
+**版本：** v26.0（正式版）  
 **作者：** StarsailsClover  
 **许可证：** LGPL-2.1
 
