@@ -163,5 +163,20 @@ class ConfigManagerTest {
         String stats = ReflectionHelper.getCacheStats();
         assertNotNull(stats);
         assertFalse(stats.isEmpty());
+        assertTrue(stats.contains("Handles"), "stats must report MethodHandle cache");
+    }
+
+    @Test
+    @DisplayName("invokeMethod hot path returns stable results across repeated calls")
+    void testMethodHandleRepeatStability() {
+        Fixture fixture = new Fixture();
+        // First call resolves and caches the MethodHandle, subsequent calls
+        // must keep returning identical semantics (regression guard for the
+        // v26.0-Alpha.3 MethodHandle migration).
+        for (int i = 1; i <= 50; i++) {
+            Object result = ReflectionHelper.invokeMethod(fixture, new String[] { "increment" }, 1);
+            assertEquals(i, ((Number) result).intValue(), "iteration " + i);
+        }
+        assertEquals(50, ((Number) ReflectionHelper.getFieldValue(fixture, "counter")).intValue());
     }
 }

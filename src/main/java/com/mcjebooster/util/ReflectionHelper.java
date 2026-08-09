@@ -18,6 +18,8 @@
 
 package com.mcjebooster.util;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,10 +32,12 @@ import com.mcjebooster.adapter.VersionAdapter;
  * 由于 Minecraft 使用不同的混淆映射（MCP, Yarn, Mojang），
  * 我们需要通过反射来动态访问字段和方法。
  * 
- * 此类提供缓存机制以提高性能。
+ * 此类提供缓存机制以提高性能。自 v26.0-Alpha.3 起，方法调用路径
+ * 由 {@code Method.invoke} 升级为缓存的 {@link MethodHandle}，
+ * 热路径（如每 tick 每实体的调用）开销显著降低。
  * 
  * @author StarsailsClover
- * @version 26.5-20260510
+ * @version 26.0-Alpha.3
  * @since 1.0
  */
 public class ReflectionHelper {
@@ -41,8 +45,14 @@ public class ReflectionHelper {
     /** 字段缓存：类名 -> 字段名 -> Field */
     private static final Map<String, Map<String, Field>> fieldCache = new ConcurrentHashMap<>();
     
-    /** 方法缓存：类名 -> 方法签名 -> Method */
+    /** 方法缓存：类名 -> 方法签名 -> Method（保留用于兼容查询） */
     private static final Map<String, Map<String, Method>> methodCache = new ConcurrentHashMap<>();
+    
+    /** MethodHandle 缓存：类名#方法名#参数签名 -> MethodHandle */
+    private static final Map<String, MethodHandle> handleCache = new ConcurrentHashMap<>();
+    
+    /** 共享 Lookup，用于将已开放的 Method 转换为 MethodHandle */
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     
     /** 类缓存：类名 -> Class */
     private static final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
@@ -140,7 +150,10 @@ public class ReflectionHelper {
     
     /**
      * 调用对象的方法（支持私有方法）
-     * 
+     *
+     * v26.0-Alpha.3 起，解析结果以 {@link MethodHandle} 形式缓存，
+     * 后续调用不再经过 {@code Method.invoke} 的参数检查与装箱慢路径。
+     *
      * @param obj 目标对象
      * @param methodNames 可能的方法名列表
      * @param args 方法参数
@@ -150,39 +163,49 @@ public class ReflectionHelper {
         if (obj == null || methodNames == null || methodNames.length == 0) {
             return null;
         }
-        
+
         Class<?> clazz = obj.getClass();
-        String cacheKey = clazz.getName();
-        
-        Map<String, Method> classMethods = methodCache.computeIfAbsent(
-            cacheKey, 
-            k -> new ConcurrentHashMap<>()
-        );
-        
         Class<?>[] argTypes = getArgTypes(args);
-        
+        String argSignature = Arrays.toString(argTypes);
+
         for (String methodName : methodNames) {
-            try {
-                String methodKey = methodName + Arrays.toString(argTypes);
-                Method method = classMethods.get(methodKey);
-                
+            String handleKey = clazz.getName() + "#" + methodName + "#" + argSignature;
+
+            MethodHandle handle = handleCache.get(handleKey);
+            if (handle == null) {
+                Method method = findMethod(clazz, methodName, argTypes);
                 if (method == null) {
-                    method = findMethod(clazz, methodName, argTypes);
-                    if (method != null) {
-                        method.setAccessible(true);
-                        classMethods.put(methodKey, method);
-                    }
+                    continue;
                 }
-                
-                if (method != null) {
-                    return method.invoke(obj, args);
+                method.setAccessible(true);
+                try {
+                    handle = LOOKUP.unreflect(method);
+                } catch (IllegalAccessException e) {
+                    Logger.debug("Failed to unreflect method " + methodName + " on "
+                        + clazz.getName() + ": " + e.getMessage());
+                    continue;
                 }
-                
-            } catch (Exception e) {
-                Logger.debug("Failed to invoke method " + methodName + " on " + clazz.getName() + ": " + e.getMessage());
+                handleCache.put(handleKey, handle);
+
+                // Keep the legacy method cache populated for diagnostics.
+                methodCache.computeIfAbsent(clazz.getName(), k -> new ConcurrentHashMap<>())
+                    .put(methodName + argSignature, method);
+            }
+
+            try {
+                if (args == null || args.length == 0) {
+                    return handle.invoke(obj);
+                }
+                Object[] all = new Object[args.length + 1];
+                all[0] = obj;
+                System.arraycopy(args, 0, all, 1, args.length);
+                return handle.invokeWithArguments(all);
+            } catch (Throwable t) {
+                Logger.debug("Failed to invoke method " + methodName + " on "
+                    + clazz.getName() + ": " + t.getMessage());
             }
         }
-        
+
         return null;
     }
     
@@ -378,6 +401,7 @@ public class ReflectionHelper {
     public static void clearCache() {
         fieldCache.clear();
         methodCache.clear();
+        handleCache.clear();
         classCache.clear();
         Logger.info("ReflectionHelper cache cleared");
     }
@@ -396,10 +420,11 @@ public class ReflectionHelper {
             .sum();
         
         return String.format(
-            "ReflectionHelper Cache Stats - Classes: %d, Fields: %d, Methods: %d",
+            "ReflectionHelper Cache Stats - Classes: %d, Fields: %d, Methods: %d, Handles: %d",
             classCache.size(),
             totalFields,
-            totalMethods
+            totalMethods,
+            handleCache.size()
         );
     }
 }
